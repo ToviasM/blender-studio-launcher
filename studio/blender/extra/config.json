@@ -1,0 +1,8 @@
+{
+    "enabled_addons": [
+        "simple_addon"
+    ],
+    "disabled_addons": [
+        "measureit"
+    ]
+}

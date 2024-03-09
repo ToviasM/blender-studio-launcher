@@ -16,7 +16,7 @@ import bpy
 
 class OBJECT_OT_simple(bpy.types.Operator):
     bl_idname = "objects.simple"
-    bl__label = "SIMPLE"
+    bl_label = "SIMPLE"
 
     @classmethod
     def poll(cls, context):

@@ -9,7 +9,21 @@ import yaml
 APP_CONFIG = "configs/apps.yml"
 class_registry = {}
 
+
+def register_class(key):
+    def decorator(cls):
+        class_registry[key] = cls
+        return cls
+    return decorator
+
+
 class App():
+
+    __logo__ = "default.png"
+    __name__ = "Launcher"
+    __category__ = ""
+    __extensions__ = []
+
     def __init__(self, cmds, config, **kwargs):
         self._cmds = cmds
         self._config = config
@@ -37,20 +51,23 @@ class App():
     def _default_launch(self):
         self.prepare_launch()
         subprocess.Popen(self.cmds, env=self.get_environment())
+    
+    def asset_launch(self, asset_path):
+        if os.path.splitext(asset_path)[1] in self.__extensions__:
+            self.prepare_launch()
+            cmds = self.cmds 
+            cmds.append(asset_path)
+            subprocess.Popen(cmds, env=self.get_environment())
 
     def prepare_launch(self):
         pass 
 
-def register_class(key):
-    def decorator(cls):
-        class_registry[key] = cls
-        return cls
-    return decorator
-
 @register_class("blender")
 class BlenderLauncher(App):
+    __logo__ = "blender.png"
     __name__ = "Blender Launcher"
     __category__ = "DCC"
+    __extensions__ = [".blend"]
 
     def __init__(self, cmds, config, **kwargs):
         super().__init__(cmds, config, **kwargs)
@@ -73,7 +90,6 @@ class BlenderLauncher(App):
                     print(destination_item)
                     shutil.copy2(source_item, destination_item)
 
-        
         copy_directory_contents(startup_src, startup_destination)
 
 
@@ -88,17 +104,22 @@ class ConfigReader():
             config = yaml.safe_load(file)
         
         for app in config.get("apps"):
+            
+            variables = {
+                'STUDIO_REPO_PATH': STUDIO_PATH,
+                'PROGRAMFILES': os.environ.get('PROGRAMFILES'),
+                'version': config.get("apps").get(app).get("version")
+            }
+
             launcher_class = class_registry.get(app)
-            try:
-                envs = config.get("apps").get(app).get("env")
-                for env in envs.keys():
-                    envs[env] = envs[env].format(STUDIO_REPO_PATH=STUDIO_PATH)
-            except:
-                pass
-                
+
+            envs = config.get("apps").get(app).get("env")
+            for env in envs.keys():
+                envs[env] = envs[env].format_map(variables)
+
             cmds = config.get("apps").get(app).get("cmds")
             for index, cmd in enumerate(cmds):
-                cmds[index] = cmd.format(PROGRAMFILES=os.environ.get('PROGRAMFILES'), version=config.get("apps").get(app).get("version"))
+                cmds[index] = cmd.format_map(variables)
 
 
             launcher = launcher_class(cmds, config.get("apps").get(app), **envs)
