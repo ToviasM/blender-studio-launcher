@@ -6,9 +6,11 @@ from PySide6.QtGui import QIcon
 from launcher import ConfigReader
 
 class Launcher(QDialog):
+    "The dialog for Launching applications with environment variables"
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("DCC Launcher")
+        self.setWindowTitle("Blender Launcher")
         self.setGeometry(100,100,400,300)
 
         self.config = ConfigReader()
@@ -24,35 +26,35 @@ class Launcher(QDialog):
         application_layout = QHBoxLayout(applications_widget)
         application_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
         resources_path = os.path.join(os.path.dirname(__file__), "resources")
-        for launcher in self.launchers:
-            software_launch_button = QToolButton(self)
-            software_launch_button.setIcon(QIcon(os.path.join(resources_path, launcher.__logo__)))
-            software_launch_button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)  # Set button style to remove border
-            software_launch_button.setAutoRaise(True)  # Remove background color when mouse over
-            software_launch_button.setFixedSize(80, 80)  # Set button size
-            software_launch_button.setIconSize(software_launch_button.size())  # Set the icon size to match the button size
+        
+        #Create a button for all launchers in the config
+        for software_launcher in self.launchers:
+            launch_button = QToolButton(self)
+            launch_button.setIcon(QIcon(os.path.join(resources_path, software_launcher.__logo__)))
+            launch_button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)  # Set button style to remove border
+            launch_button.setAutoRaise(True)  # Remove background color when mouse over
+            launch_button.setFixedSize(80, 80)  # Set button size
+            launch_button.setIconSize(launch_button.size())  # Set the icon size to match the button size
 
-            software_launch_button.clicked.connect(launcher._default_launch)
-            application_layout.addWidget(software_launch_button)
+            launch_button.clicked.connect(software_launcher._launch)
+            application_layout.addWidget(launch_button)
             
-
+        #Create a button for selecting an asset
         browse_asset_button = QPushButton("Open Asset")
-        browse_asset_button.clicked.connect(self.launch_asset)
+        browse_asset_button.clicked.connect(self.asset_launch)
+
         layout.addWidget(applications_widget)
         layout.addWidget(browse_asset_button)
 
-    def launch_asset(self):
-         asset_path = self.openFile()
+    def asset_launch(self):
+         "Launch the asset with the selected launcher, defaults to first in config"
+         asset_path = self.open_file()
          self.selected_launcher.asset_launch(asset_path)
 
-    def openFile(self):
-            # Get the path to the resources folder
-            resources_path = os.path.join(os.path.dirname(__file__), "resources")
-
-            # Open a file dialog to select a .blend file
+    def open_file(self) -> str:
+            "Open File Dialog and return selected items path"
             file_dialog = QFileDialog(self)
             file_dialog.setFileMode(QFileDialog.ExistingFile)
-            file_dialog.setNameFilter("Blend files (*.blend)")
             if file_dialog.exec():
                 selected_files = file_dialog.selectedFiles()
                 if selected_files:

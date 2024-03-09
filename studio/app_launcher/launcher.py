@@ -3,67 +3,63 @@ import os
 import sys
 import shutil
 from pathlib import Path
-from constants import STUDIO_PATH
+from constants import STUDIO_PATH, APP_CONFIG
 import yaml
 
-APP_CONFIG = "configs/apps.yml"
-class_registry = {}
-
-
-def register_class(key):
-    def decorator(cls):
-        class_registry[key] = cls
-        return cls
-    return decorator
-
-
-class App():
-
+class AppLauncher():
     __logo__ = "default.png"
     __name__ = "Launcher"
     __category__ = ""
     __extensions__ = []
 
     def __init__(self, cmds, config, **kwargs):
-        self._cmds = cmds
-        self._config = config
-        self._env = kwargs
+        self.cmds = cmds
+        self.config = config
+        self.env = kwargs
         pass
 
-    def get_environment(self):
+    def _get_environment(self) -> dict:
+        "Creates a suitable environment for launching applications. Using both the initial environment, as well as any additions"
         env = os.environ.copy()
         for key, value in self.env.items():
             env[key] = value
         return env
-    
-    @property
-    def config(self):
-        return self._config
-    
-    @property
-    def cmds(self):
-        return self._cmds
-    
-    @property
-    def env(self):
-        return self._env
 
-    def _default_launch(self):
+    def _get_commands(self, temp_cmds:list=None) -> list:
+        "Returns a set of commands from the class commands and any temporary commands"
+        cmds = self.cmds.copy()
+        if temp_cmds:
+            cmds.extend(temp_cmds)
+        
+        return cmds
+    
+    def _launch(self, temp_cmds:list=None):
+        "Private function for launching applications through a subprocess"
+    
         self.prepare_launch()
-        subprocess.Popen(self.cmds, env=self.get_environment())
+        subprocess.Popen(self._get_commands(), env=self._get_environment())
     
     def asset_launch(self, asset_path):
+        "Overridable function that launches the application with a targeted asset path"
+        
         if os.path.splitext(asset_path)[1] in self.__extensions__:
-            self.prepare_launch()
-            cmds = self.cmds 
-            cmds.append(asset_path)
-            subprocess.Popen(cmds, env=self.get_environment())
+            self._launch(temp_cmds=[asset_path])
 
     def prepare_launch(self):
+        "Prepares the application with any required setup"
         pass 
 
+class_registry = {"default" : AppLauncher}
+
+def register_class(key):
+    "Decorator for registering app classes by name, allowing for new apps to be linked easily with the app config"
+    def decorator(cls):
+        class_registry[key] = cls
+        return cls
+    return decorator
+
 @register_class("blender")
-class BlenderLauncher(App):
+class BlenderLauncher(AppLauncher):
     __logo__ = "blender.png"
     __name__ = "Blender Launcher"
     __category__ = "DCC"
@@ -73,6 +69,8 @@ class BlenderLauncher(App):
         super().__init__(cmds, config, **kwargs)
     
     def prepare_launch(self):
+        "Copies studio startup folder to Blenders startup directory"
+
         startup_src = Path(self.env.get("STUDIO_STARTUP_PATH"))
         startup_destination = Path(os.path.dirname(self.cmds[0]) + "/{version}".format(version=self.config.get("version")) + "/scripts/startup")
 
@@ -92,19 +90,19 @@ class BlenderLauncher(App):
 
         copy_directory_contents(startup_src, startup_destination)
 
-
-
 class ConfigReader():
-    def __init__(self) -> None:
+    def __init__(self):
         self.launchers = []
         self.load_config()
 
     def load_config(self):
+        "Loads the app config and creates launchers"
+
         with open(STUDIO_PATH + "/" + APP_CONFIG, 'r') as file:
             config = yaml.safe_load(file)
         
         for app in config.get("apps"):
-            
+
             variables = {
                 'STUDIO_REPO_PATH': STUDIO_PATH,
                 'PROGRAMFILES': os.environ.get('PROGRAMFILES'),
@@ -112,6 +110,8 @@ class ConfigReader():
             }
 
             launcher_class = class_registry.get(app)
+            if launcher_class is None:
+                launcher_class = class_registry.get("default")
 
             envs = config.get("apps").get(app).get("env")
             for env in envs.keys():
@@ -125,6 +125,6 @@ class ConfigReader():
             launcher = launcher_class(cmds, config.get("apps").get(app), **envs)
             self.launchers.append(launcher)
 
-    def get_launchers(self):
+    def get_launchers(self) -> list:
         return self.launchers
 
