@@ -4,6 +4,8 @@ import os
 
 import bpy
 
+#This script is called after Blender registers it's classes and addons, allowing us to disable or enable addons based on a config
+
 script_path = os.path.abspath(__file__)
 folder_name =os.path.dirname(script_path)
 config_path = os.path.join(folder_name, "config.json")
