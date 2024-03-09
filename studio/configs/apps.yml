@@ -1,0 +1,7 @@
+apps:
+  blender:
+    cmds: ["{PROGRAMFILES}/Blender Foundation/Blender {version}/blender"]
+    version: 3.3
+    env:
+      STUDIO_ADDON_PATH : "{STUDIO_REPO_PATH}/blender/addons"
+      STUDIO_STARTUP_PATH : "{STUDIO_REPO_PATH}/blender/startup"
