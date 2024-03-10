@@ -1,7 +1,7 @@
 # Blender Studio Launcher
 
 ## Overview
-The Blender Studio Launcher is designed to integrate Blender with our custom studio environment seamlessly. It ensures that Blender starts with specific arguments and an environment tailored to our studio's needs, with a focus on the addons and configurations that we've developed in-house.
+The Blender Studio Launcher is a template designed to integrate Blender with a custom studio environment. It ensures that Blender starts with specific arguments and an environment tailored to a studio's needs, with a focus on the addons and configurations that you've developed in-house. The goal of this repo is to showcase launching Blender through a Python launcher and is not on the launcher itself. As integration with a custom launcher is inevitable, this repo is a guide to integrating Blender into your environment. 
 
 ## Features
 - **Environment Variable Integration**: Set up to launch Blender with custom environment variables that direct our addons
@@ -22,12 +22,12 @@ This subprocess takes a list of cmds, and an environment. Both are useful in lau
 ```subprocess.Popen(["users/programFiles/blender foundation/blender.exe", "-P", "user_setup_blender.py"], env={"VARIABLE" : "VALUE"})```
 
 ### BLENDER_USER_SCRIPTS
-For our case we want to point Blender to our studio-specific path that contains our addons. This can be done by setting Blenders user script environment variable BLENDER_USER_SCRIPTS 
+For our case, we want to point Blender to our studio-specific path that contains our addons. This can be done by setting Blenders user script environment variable BLENDER_USER_SCRIPTS 
 
-```subprocess.Popen(["users/programFiles/blender foundation/blender.exe", "-P", "user_setup_blender.py"], env={"BLENDER_USER_SCRIPTS" : "PATH"})```
+```subprocess.Popen(["users/programFiles/blender foundation/blender.exe"], env={"BLENDER_USER_SCRIPTS" : "PATH"})```
 
 ### The Full Pipeline
-This is great for a controlled environment, but if we set this path it removes all other user addons that are set in Blender. This is far from ideal, so we need to create our very own environment variable. This can be done by replacing the path function in blenders addon_utils.py script. This can be done directly, or in our case we create a new startup script that runs and replaces the function with the added environment variable
+This is great for a controlled environment, but if we set this path it removes all other user addons that are set in Blender. This is far from ideal, so we need to create our very own environment variable. This can be done by replacing the path function in blenders addon_utils.py script. This can be done directly, or in our case, we create a new startup script that runs and replaces the function with the added environment variable.
 
 ```
 import addon_utils
